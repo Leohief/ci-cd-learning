@@ -1,0 +1,16 @@
+# Maven Build-Dateien
+target/
+
+# Java
+*.class
+
+# VS Code
+.vscode/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+
+# Betriebssystem
+.DS_Store
+Thumbs.db
