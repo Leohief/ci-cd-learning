@@ -13,4 +13,13 @@ public class RechnerTest {
         assertEquals(8, ergebnis);
     }
 
+    @Test
+    void testMultiplizieren() {
+        Rechner rechner = new Rechner();
+
+        int ergebnis = rechner.multiplizieren(4, 5);
+
+        assertEquals(20, ergebnis);
+    }
+
 }
