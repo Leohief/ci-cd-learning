@@ -7,7 +7,7 @@ public class Rechner {
     }
 
     public int multiplizieren(int a, int b) {
-        return a * b;
+        return a + b;
     }
 
 }
