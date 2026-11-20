@@ -33,7 +33,7 @@ pipeline {
 
         stage('Docker Check') {
             steps {
-                bat 'docker version'
+                bat '"C:\\Users\\HP\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" version'
             }
 }
     }
