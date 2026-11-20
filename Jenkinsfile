@@ -30,6 +30,12 @@ pipeline {
                 bat 'mvn package -DskipTests'
             }
         }
+
+        stage('Docker Check') {
+            steps {
+                bat 'docker version'
+            }
+}
     }
 
     post {
