@@ -31,11 +31,11 @@ pipeline {
             }
         }
 
-        stage('Docker Check') {
+       stage('Docker Check') {
             steps {
-                bat '"C:\\Users\\HP\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" version'
+                bat '"C:\\Users\\HP\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" --host npipe:////./pipe/dockerDesktopLinuxEngine version'
             }
-        }   
+}
 
         stage('Docker Build') {
             steps {
