@@ -39,9 +39,9 @@ pipeline {
 
         stage('Docker Build') {
             steps {
-                bat '"C:\\Users\\HP\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" build -t ci-cd-learning:3.0 .'
+                bat '"C:\\Users\\HP\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" build -t ci-cd-learning:%BUILD_NUMBER% .'
             }
-        }
+}
     }
 
     post {
