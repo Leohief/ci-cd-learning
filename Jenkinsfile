@@ -76,7 +76,17 @@ pipeline {
                         New-Item -ItemType Directory -Force -Path $env:DOCKER_CONFIG | Out-Null
 
                         try {
-                           
+                            
+                            if ($env:DOCKER_USER -ne "leohief") {
+                                throw "Falscher Docker-Hub-Benutzername"
+                            }
+
+                            if ([string]::IsNullOrWhiteSpace($env:DOCKER_TOKEN)) {
+                                throw "Docker-Hub-Token fehlt"
+                            }
+
+                            Write-Host "Docker-Hub-Benutzername korrekt"
+                            Write-Host "Docker-Hub-Token vorhanden"
                             $loginInfo = New-Object System.Diagnostics.ProcessStartInfo
                             $loginInfo.FileName = $docker
                             $loginInfo.Arguments = "--host $dockerHost login -u $env:DOCKER_USER --password-stdin"
