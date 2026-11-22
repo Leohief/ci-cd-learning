@@ -76,11 +76,33 @@ pipeline {
                         New-Item -ItemType Directory -Force -Path $env:DOCKER_CONFIG | Out-Null
 
                         try {
-                            $env:DOCKER_TOKEN | & $docker --host $dockerHost login -u $env:DOCKER_USER --password-stdin
+                           
+                            $loginInfo = New-Object System.Diagnostics.ProcessStartInfo
+                            $loginInfo.FileName = $docker
+                            $loginInfo.Arguments = "--host $dockerHost login -u $env:DOCKER_USER --password-stdin"
+                            $loginInfo.UseShellExecute = $false
+                            $loginInfo.RedirectStandardInput = $true
+                            $loginInfo.CreateNoWindow = $true
 
-                            if ($LASTEXITCODE -ne 0) {
-                                throw "Docker Login fehlgeschlagen"
+                            $process = New-Object System.Diagnostics.Process
+                            $process.StartInfo = $loginInfo
+
+                            try {
+                                [void]$process.Start()
+
+                                $process.StandardInput.WriteLine($env:DOCKER_TOKEN)
+                                $process.StandardInput.Close()
+
+                                $process.WaitForExit()
+
+                                if ($process.ExitCode -ne 0) {
+                                    throw "Docker Login fehlgeschlagen"
+                                }
                             }
+                            finally {
+                                $process.Dispose()
+                            }
+
 
                             & $docker --host $dockerHost push "leohief/ci-cd-learning:$env:BUILD_NUMBER"
 
