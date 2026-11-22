@@ -31,7 +31,7 @@ pipeline {
             }
         }
 
-       stage('Docker Check') {
+        stage('Docker Check') {
             steps {
                 bat '"C:\\Users\\HP\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" --host npipe:////./pipe/dockerDesktopLinuxEngine version'
             }
@@ -39,7 +39,7 @@ pipeline {
 
         stage('Docker Build') {
             steps {
-                bat '"C:\\Users\\HP\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" build -t ci-cd-learning:%BUILD_NUMBER% .'
+                bat '"C:\\Users\\HP\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" --host npipe:////./pipe/dockerDesktopLinuxEngine build -t ci-cd-learning:%BUILD_NUMBER% .'
             }
         }
 
@@ -49,19 +49,17 @@ pipeline {
             }
         }
 
-
         stage('Docker Tag') {
             steps {
                 bat '"C:\\Users\\HP\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" --host npipe:////./pipe/dockerDesktopLinuxEngine tag ci-cd-learning:%BUILD_NUMBER% leohief/ci-cd-learning:%BUILD_NUMBER%'
             }
         }
 
-        
         stage('Docker Push') {
             steps {
                 withCredentials([
                     usernamePassword(
-                        credentialsId: 'dockerhub-credentials',
+                        credentialsId: 'dockerhub-test-2',
                         usernameVariable: 'DOCKER_USER',
                         passwordVariable: 'DOCKER_TOKEN'
                     )
@@ -69,66 +67,60 @@ pipeline {
                     powershell '''
                         $ErrorActionPreference = "Stop"
 
-                        $docker = "C:\\Users\\HP\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe"
+                        $docker = "C:/Users/HP/AppData/Local/Programs/DockerDesktop/resources/bin/docker.exe"
                         $dockerHost = "npipe:////./pipe/dockerDesktopLinuxEngine"
-                        $env:DOCKER_CONFIG = Join-Path $env:WORKSPACE ".docker-jenkins"
 
-                        New-Item -ItemType Directory -Force -Path $env:DOCKER_CONFIG | Out-Null
+                        $config = Join-Path $env:TEMP (
+                            "docker-push-" + [guid]::NewGuid().ToString()
+                        )
+
+                        New-Item -ItemType Directory -Force -Path $config | Out-Null
+                        $env:DOCKER_CONFIG = $config
 
                         try {
-                            
-                            if ($env:DOCKER_USER -ne "leohief") {
-                                throw "Falscher Docker-Hub-Benutzername"
-                            }
+                            $credentials = $env:DOCKER_USER + ":" + $env:DOCKER_TOKEN
 
-                            if ([string]::IsNullOrWhiteSpace($env:DOCKER_TOKEN)) {
-                                throw "Docker-Hub-Token fehlt"
-                            }
+                            $auth = [Convert]::ToBase64String(
+                                [System.Text.Encoding]::UTF8.GetBytes($credentials)
+                            )
 
-                            Write-Host "Docker-Hub-Benutzername korrekt"
-                            Write-Host "Docker-Hub-Token vorhanden"
-                            $loginInfo = New-Object System.Diagnostics.ProcessStartInfo
-                            $loginInfo.FileName = $docker
-                            $loginInfo.Arguments = "--host $dockerHost login -u $env:DOCKER_USER --password-stdin"
-                            $loginInfo.UseShellExecute = $false
-                            $loginInfo.RedirectStandardInput = $true
-                            $loginInfo.CreateNoWindow = $true
-
-                            $process = New-Object System.Diagnostics.Process
-                            $process.StartInfo = $loginInfo
-
-                            try {
-                                [void]$process.Start()
-
-                                $process.StandardInput.WriteLine($env:DOCKER_TOKEN)
-                                $process.StandardInput.Close()
-
-                                $process.WaitForExit()
-
-                                if ($process.ExitCode -ne 0) {
-                                    throw "Docker Login fehlgeschlagen"
+                            $dockerConfig = @{
+                                auths = @{
+                                    "https://index.docker.io/v1/" = @{
+                                        auth = $auth
+                                    }
                                 }
                             }
-                            finally {
-                                $process.Dispose()
-                            }
 
+                            $json = $dockerConfig | ConvertTo-Json -Depth 5
 
-                            & $docker --host $dockerHost push "leohief/ci-cd-learning:$env:BUILD_NUMBER"
+                            [System.IO.File]::WriteAllText(
+                                (Join-Path $config "config.json"),
+                                $json,
+                                (New-Object System.Text.UTF8Encoding($false))
+                            )
+
+                            Write-Host "Docker-Konfiguration erstellt"
+
+                            $image = "leohief/ci-cd-learning:$env:BUILD_NUMBER"
+
+                            Write-Host "Docker Push gestartet: $image"
+
+                            & $docker --host $dockerHost push $image
 
                             if ($LASTEXITCODE -ne 0) {
                                 throw "Docker Push fehlgeschlagen"
                             }
+
+                            Write-Host "Docker Push erfolgreich: $image"
                         }
                         finally {
-                            Remove-Item -Recurse -Force $env:DOCKER_CONFIG -ErrorAction SilentlyContinue
+                            Remove-Item -Recurse -Force $config -ErrorAction SilentlyContinue
                         }
                     '''
                 }
             }
         }
-
-
     }
 
     post {
