@@ -5,6 +5,7 @@ public class Main {
         System.out.println("Ich lerne Git und Jenkins");
         System.out.println("Diese Funktion wurde in einem neuen Branch entwickelt.");
         System.out.println("Meine Java-Anwendung läuft jetzt mit Docker Version 2.0!");
+        System.out.println("Automatischer Build durch GitHub Webhook!");
     }
 
     
